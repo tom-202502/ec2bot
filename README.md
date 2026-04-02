@@ -1,12 +1,10 @@
-# 可共享的 Skills 与项目
+# EC2Bot — Telegram AWS 服务器管理机器人
 
 本目录包含可以分享给其他人使用的 Claude Code Skills 和开源项目。
 
 ---
 
-## ec2bot-open/ — EC2Bot 开源项目
-
-**EC2Bot — Telegram AWS 服务器管理机器人**
+## ec2bot-open — EC2Bot 开源项目
 
 ```
 通过 Telegram 随时随地管理 AWS EC2 服务器。半夜宕机手机秒收告警，外出时一条命令远程重启，不用打开电脑登 AWS 控制台。
