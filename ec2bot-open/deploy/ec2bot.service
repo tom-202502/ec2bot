@@ -1,0 +1,33 @@
+[Unit]
+Description=EC2Bot - Telegram AWS Server Management Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+
+WorkingDirectory=/opt/ec2bot/app
+Environment=EC2BOT_CONFIG=/opt/ec2bot/config/config.yaml
+Environment=EC2BOT_ENV=/opt/ec2bot/config/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+
+ExecStart=/opt/ec2bot/venv/bin/python3 ec2_bot.py
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ec2bot
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/ec2bot/run /opt/ec2bot/logs /opt/ec2bot/config
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

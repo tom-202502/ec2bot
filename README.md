@@ -1,3 +1,21 @@
+# 技术中心组件平台 — 发布填写指南
+
+> 共 8 个组件，按优先级排列。每个组件列出所有表单字段的填写内容，直接复制粘贴即可。
+
+---
+---
+
+## 组件 1：ec2bot
+
+### 第 1 页 — 基本信息
+
+**组件名称：** ec2bot
+
+**版本号：** 2.0.0
+
+**功能描述（Markdown）：**
+
+```
 # EC2Bot — Telegram AWS 服务器管理机器人
 
 通过 Telegram 随时随地管理 AWS EC2 服务器。半夜宕机手机秒收告警，外出时一条命令远程重启，不用打开电脑登 AWS 控制台。
@@ -61,4 +79,924 @@ CPU 告警：
 
 **协作者：** （空）
 
-**Git 仓库地址：** [https://github.com/yourname/ec2bot](https://github.com/tom-202502/ec2bot)
+**Git 仓库地址：** https://github.com/yourname/ec2bot
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包（ZIP/TAR）：** 打包 `skill/ec2bot-open/` 目录为 ec2bot-2.0.0.zip
+
+**封面图：** Telegram Bot 对话截图（/dashboard 页面）
+
+**演示视频：** （空）
+
+**截图：** 建议上传 3 张：
+1. /dashboard 全局仪表盘界面
+2. 宕机告警消息推送
+3. /searchip 搜索结果
+
+**详细文档 / README（Markdown）：**
+
+```
+# EC2Bot 部署与使用手册
+
+## 一、前提条件
+
+1. Telegram Bot Token — 找 @BotFather 创建机器人获取
+2. AWS Access Key — IAM 用户需要权限：ec2:DescribeInstances, ec2:RebootInstances, ec2:StartInstances, ec2:StopInstances, cloudwatch:GetMetricStatistics, cloudwatch:ListMetrics
+3. Python 3.9+
+4. 你的 Telegram 用户 ID — 找 @userinfobot 获取
+
+## 二、快速部署（5 分钟）
+
+### 方式一：直接运行
+
+git clone https://github.com/yourname/ec2bot.git
+cd ec2bot
+pip3 install -r app/requirements.txt
+cp config/config.yaml.example config/config.yaml
+cp config/.env.example config/.env
+# 编辑 .env 填入 Bot Token 和 AWS 凭证
+# 编辑 config.yaml 填入你的 Telegram 用户 ID
+cd app && python3 ec2_bot.py
+
+### 方式二：Docker
+
+git clone https://github.com/yourname/ec2bot.git
+cd ec2bot
+cp config/config.yaml.example config/config.yaml
+cp config/.env.example config/.env
+# 编辑配置
+docker-compose -f deploy/docker-compose.yml up -d
+
+### 方式三：systemd 服务
+
+sudo mkdir -p /opt/ec2bot/{app,config,logs,run}
+sudo cp app/*.py /opt/ec2bot/app/
+cd /opt/ec2bot && python3 -m venv venv
+source venv/bin/activate && pip install -r app/requirements.txt
+sudo cp deploy/ec2bot.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now ec2bot
+
+## 三、配置说明
+
+### .env 环境变量
+
+TELEGRAM_BOT_TOKEN=你的Bot Token
+AWS_USE_INSTANCE_ROLE=false
+MY_AWS_KEY=你的 Access Key
+MY_AWS_SECRET=你的 Secret Key
+
+### config.yaml 关键配置
+
+telegram.admins: 管理员用户ID列表
+telegram.alert_chat_ids: 告警推送目标
+monitor.check_interval: 轮询间隔（默认120秒）
+monitor.cpu_alert_threshold: CPU告警阈值（默认85%）
+policy.protect_stop_in_production: 生产保护开关
+
+## 四、首次使用
+
+1. 启动 Bot 后在 Telegram 发送 /start 验证
+2. 发送 /account_import 我的AWS账户 自动导入实例
+3. 发送 /dashboard 查看全局仪表盘
+4. 发送 /cpualarm 开启 CPU 告警
+
+## 五、自动同步
+
+配置 cron 每 2 小时扫描 AWS 发现新增/终止实例：
+0 */2 * * * cd /opt/ec2bot && venv/bin/python3 app/sync_instances.py >> logs/sync.log 2>&1
+
+## 六、架构
+
+主程序 ec2_bot.py（Telegram 路由 + 权限）
+→ aws_manager_secure.py（boto3 封装）
+→ monitor_secure.py（后台监控引擎）
+→ sync_instances.py（实例同步）
+→ audit_store.py + state_store.py（SQLite 持久化）
+→ config_manager.py + secret_manager.py（配置/凭证管理）
+
+## 七、安全
+
+- 凭证全部外部化（.env 文件），代码零硬编码
+- 三级 RBAC 权限体系
+- 凭证录入仅限私聊
+- systemd 服务含安全加固（NoNewPrivileges, ProtectSystem）
+```
+
+**版本更新说明：**
+
+```
+首次发布 v2.0.0
+
+主要功能：
+- 多 AWS 账户管理
+- 后台自动监控 + Telegram 告警推送
+- 远程实例控制（重启/启动/停止）
+- IP/主机名搜索
+- 三级权限体系（admin/operator/viewer）
+- 生产保护策略
+- SQLite 审计日志
+- 实例自动发现与同步
+- 支持 Docker / systemd 部署
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 运维工具（或最接近的分类）
+
+**标签：** `telegram` `aws` `ec2` `监控告警` `远程控制` `bot` `python` `运维`
+
+**操作：** 提交审核
+
+---
+---
+
+## 组件 2：make-plan
+
+### 第 1 页 — 基本信息
+
+**组件名称：** make-plan
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# make-plan — Claude Code 分阶段实施规划 Skill
+
+复杂任务动手前先规划。编排器自动进行文档发现、API 验证和反模式防护，输出可在新上下文中逐阶段执行的实施计划。
+
+## 解决什么问题
+
+- 复杂功能开发，不知道从哪下手 → 自动拆解为可执行的阶段
+- 子代理经常"发明" API → Phase 0 强制文档发现，只允许用文档中存在的 API
+- 实施过程跑偏 → 每阶段带验证清单和反模式防护
+
+## 工作方式
+
+编排器负责综合与计划编写，子代理负责事实收集（文档、示例、函数签名）。
+
+### 计划结构
+
+**Phase 0：文档发现（必选首阶段）**
+- 搜索相关文档、示例和已有模式
+- 输出"允许的 API 列表"，引用具体来源
+- 标注反模式（不存在的方法、已废弃的参数）
+
+**每个实施阶段包含：**
+1. 实现目标 — 导向"从文档复制模式"
+2. 文档引用 — 具体文件和行号
+3. 验证清单 — 如何证明这阶段完成了
+4. 反模式防护 — 不要做什么
+
+**最终阶段：全量验证**
+
+## 核心原则
+
+- 文档可用 ≠ 已使用：明确要求阅读文档
+- 任务描述决定质量：把代理引向文档，不只是结果
+- 验证 > 假设：要求证据，不假设 API 存在
+- 阶段自包含：每阶段独立携带文档引用
+
+## 使用方式
+
+将 SKILL.md 复制到 .claude/skills/make-plan/ 目录
+触发命令：/make-plan
+搭配 /do 使用：先规划再执行
+
+## 依赖
+
+无。纯方法论 Skill，零外部依赖，所有 Claude Code 用户可直接使用。
+```
+
+**适用场景：** `数据处理`
+
+**开发语言：** 选最接近的（Markdown / Other）
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/shared-skills
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 make-plan-1.0.0.zip
+
+**封面图：** （空）
+
+**演示视频：** （空）
+
+**截图：** （空）
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/make-plan
+cp SKILL.md .claude/skills/make-plan/
+
+## 使用
+
+在 Claude Code 中输入 /make-plan，描述你要实现的功能。
+Skill 会自动启动文档发现 → 分阶段规划流程。
+
+## 搭配使用
+
+规划完成后，使用 /do 执行计划（需安装 do Skill）。
+
+## 子代理报告契约
+
+每个子代理返回必须包含：
+1. 查阅的来源（文件路径/URL）
+2. 具体发现（精确的 API 名称/签名/路径）
+3. 可复制的代码片段位置
+4. 置信度说明 + 已知盲区
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 分阶段规划编排器
+- Phase 0 文档发现机制
+- 子代理报告契约
+- 反模式防护体系
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 开发工具（或 AI 工具）
+
+**标签：** `claude-code` `skill` `AI编排` `规划` `开发效率`
+
+---
+---
+
+## 组件 3：do-plan
+
+### 第 1 页 — 基本信息
+
+**组件名称：** do-plan
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# do — Claude Code 分阶段计划执行 Skill
+
+按 make-plan 生成的计划，部署子代理逐阶段执行。每阶段完成后自动验证 + 代码审查 + 反模式检查，验证通过才允许提交。
+
+## 解决什么问题
+
+- 计划做好了但执行走样 → 编排器严格按计划逐阶段推进
+- 代码提交后才发现问题 → 每阶段验证通过后才提交
+- 子代理发明不存在的 API → 强制对照文档验证
+
+## 执行协议
+
+### 阶段内
+部署"实施子代理"：按计划执行、从文档复制模式、API 不确定时停下验证
+
+### 阶段完成后（依次部署 4 个子代理）
+1. 验证子代理 — 运行验证清单
+2. 反模式检查子代理 — grep 已知反模式
+3. 代码质量审查子代理 — 审查变更
+4. 提交子代理 — 仅验证通过后提交
+
+### 阶段之间
+推送工作分支 + 准备下一阶段上下文交接
+
+## 必须避免的失败模式
+
+| 失败模式 | 防护 |
+|---------|------|
+| 发明不存在的 API | 对照文档验证 |
+| 添加未文档化参数 | 复制确切签名 |
+| 跳过验证 | 强制部署验证子代理 |
+| 验证前提交 | 编排器确认后才提交 |
+
+## 使用方式
+
+将 SKILL.md 复制到 .claude/skills/do/ 目录
+触发命令：/do
+前置条件：已通过 /make-plan 生成计划
+
+## 依赖
+
+无。搭配 make-plan 使用效果最佳。
+```
+
+**适用场景：** `数据处理`
+
+**开发语言：** 选最接近的（Markdown / Other）
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/shared-skills
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 do-plan-1.0.0.zip
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/do
+cp SKILL.md .claude/skills/do/
+
+## 使用
+
+1. 先执行 /make-plan 生成分阶段计划
+2. 然后执行 /do 开始逐阶段实施
+3. 编排器自动部署子代理执行 → 验证 → 审查 → 提交
+
+## 每阶段流程
+
+实施子代理（执行）→ 验证子代理（检查）→ 反模式子代理（扫描）→ 代码审查子代理（审查）→ 提交子代理（提交）→ 下一阶段
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 分阶段执行编排器
+- 阶段后自动验证 + 审查 + 提交流程
+- 失败模式防护机制
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 开发工具（或 AI 工具）
+
+**标签：** `claude-code` `skill` `AI编排` `执行` `代码审查`
+
+---
+---
+
+## 组件 4：fix-monitoring
+
+### 第 1 页 — 基本信息
+
+**组件名称：** fix-monitoring
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# fix-monitoring — Prometheus 监控异常修复 Skill
+
+一键排查并修复 Prometheus target 采集失败（target down / scrape error）。覆盖三大最常见故障类型，附带自动验证。
+
+## 覆盖的故障类型
+
+| 错误信息 | 原因 | 自动修复 |
+|---------|------|---------|
+| no route to host | 防火墙阻挡 9100 端口 | firewalld/ufw/iptables 放行 |
+| connection refused | Node Exporter 未运行 | 安装 v1.8.2 + systemd 启动 |
+| context deadline exceeded | 网络不可达 | 引导检查安全组/路由 |
+
+## 工作流程
+
+1. 从 Prometheus API 查询不健康的 target 列表
+2. 根据错误类型自动匹配修复方案
+3. SSH 到目标服务器执行修复
+4. 等待采集周期后验证修复结果
+5. 输出汇总表格
+
+## 使用方式
+
+将 SKILL.md 复制到 .claude/skills/fix-monitoring/
+触发命令：/fix-monitoring
+触发词：监控报错、target down、scrape error
+
+## 适用环境
+
+所有使用 Prometheus + Node Exporter 的监控环境（AWS / 阿里云 / 自建机房均可）
+
+## 依赖
+
+SSH 可达目标服务器 + Prometheus 环境
+```
+
+**适用场景：** `网络通信` `安全加固`
+
+**开发语言：** Bash
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/shared-skills
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 fix-monitoring-1.0.0.zip
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/fix-monitoring
+cp SKILL.md .claude/skills/fix-monitoring/
+
+## 使用
+
+在 Claude Code 中输入 /fix-monitoring，提供 Prometheus 地址或目标 IP。
+Skill 自动查询异常 target → 判断错误类型 → SSH 修复 → 验证。
+
+## 支持的防火墙
+
+- firewalld（CentOS/RHEL）
+- ufw（Ubuntu/Debian）
+- iptables（通用）
+
+## Node Exporter 版本
+
+默认安装 v1.8.2，可在 SKILL.md 中修改 VERSION 变量。
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 三大故障自动诊断与修复
+- 支持 firewalld/ufw/iptables
+- Node Exporter 自动安装
+- 修复后自动验证
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 运维工具
+
+**标签：** `prometheus` `node-exporter` `监控` `运维` `skill` `故障修复`
+
+---
+---
+
+## 组件 5：server-check
+
+### 第 1 页 — 基本信息
+
+**组件名称：** server-check
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# server-check — 批量服务器巡检 Skill
+
+批量 SSH 并发连接多台 Linux 服务器，采集 CPU/内存/磁盘/服务状态，自动标记异常项并输出汇总表。
+
+## 功能
+
+- 支持按服务器组或 IP 列表批量巡检
+- 并发 SSH 执行，速度快
+- 自动标记异常：内存 > 85%、磁盘 > 85%、负载 > CPU 核数、服务不活跃
+- 输出结构化汇总表格 + 底部异常统计
+
+## 巡检项目
+
+| 检查项 | 命令 | 异常阈值 |
+|--------|------|---------|
+| CPU 负载 | top -bn1 | 负载 > CPU 核数 |
+| 内存使用 | free -h | > 85% |
+| 磁盘使用 | df -h / | > 85% |
+| 服务状态 | systemctl is-active | inactive |
+| SSH 连通 | 连接超时检测 | 超时/拒绝 |
+
+## 输出示例
+
+| 服务器 | IP | CPU | 内存 | 磁盘 | 服务 | 状态 |
+|--------|-----|-----|------|------|------|------|
+| web-01 | 10.0.0.1 | 0.5/4 | 62% | 45% | active | OK |
+| web-02 | 10.0.0.2 | 4.2/2 | 91% | 88% | active | CPU! MEM! DISK! |
+
+共巡检 2 台 | 正常 1 台 | 异常 1 台
+
+## 使用方式
+
+触发命令：/server-check 或 /server-check production
+服务器清单支持对话输入或 YAML 配置文件
+
+## 依赖
+
+SSH 可达目标服务器
+```
+
+**适用场景：** `数据处理` `安全加固`
+
+**开发语言：** Bash / Python
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/shared-skills
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 server-check-1.0.0.zip
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/server-check
+cp SKILL.md .claude/skills/server-check/
+
+## 服务器清单格式（YAML）
+
+groups:
+  production:
+    ssh_user: ubuntu
+    ssh_key: /path/to/key.pem
+    servers:
+      - {ip: 10.0.0.1, name: web-01}
+      - {ip: 10.0.0.2, name: web-02}
+
+## 使用
+
+在 Claude Code 中输入 /server-check，提供服务器清单或 IP 列表。
+也可直接在对话中提供：IP: 10.0.0.1, 用户: ubuntu, 密钥: /path/to/key.pem
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 批量 SSH 并发巡检
+- 5 项健康检查（CPU/内存/磁盘/服务/连通性）
+- 自动异常标记与统计
+- 支持 YAML 配置和对话输入
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 运维工具
+
+**标签：** `linux` `ssh` `巡检` `服务器` `运维` `health-check` `skill`
+
+---
+---
+
+## 组件 6：batch-add-user
+
+### 第 1 页 — 基本信息
+
+**组件名称：** batch-add-user
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# add-user — 批量 Linux 用户创建 Skill
+
+批量 SSH 连接多台服务器创建用户账户。自动生成 16 位强密码，逐台验证登录，输出汇总表格。适用于人员入职、权限开通。
+
+## 功能
+
+- 指定用户名 + 服务器列表，并发 SSH 执行
+- 自动生成 16 位随机密码（大小写字母 + 数字）
+- 执行 useradd + chpasswd 创建账户
+- 默认不赋 sudo 权限（除非明确要求）
+- 使用新用户 + 密码逐台 SSH 验证
+- 输出汇总表格
+
+## 输出示例
+
+| 服务器 | IP | 用户 | 密码 | sudo | 状态 |
+|--------|-----|------|------|------|------|
+| web-01 | 10.0.0.1 | zhangsan | aB3kL9mN7pQr2sYx | 否 | OK |
+| web-02 | 10.0.0.2 | zhangsan | aB3kL9mN7pQr2sYx | 否 | OK |
+
+## 使用方式
+
+触发命令：/add-user zhangsan
+触发词：添加用户、创建用户、批量加用户
+
+## 依赖
+
+SSH 可达目标服务器（需 sudo 权限），目标服务器开启 PasswordAuthentication
+```
+
+**适用场景：** `安全加固`
+
+**开发语言：** Python / Bash
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/shared-skills
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 batch-add-user-1.0.0.zip
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/add-user
+cp SKILL.md .claude/skills/add-user/
+
+## 使用
+
+在 Claude Code 中输入 /add-user zhangsan，提供目标服务器列表。
+
+## 注意事项
+
+- 确认目标服务器 SSH PasswordAuthentication 为 yes
+- 密码输出仅显示一次，建议立即保存
+- 执行前自动检查用户是否已存在
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 批量用户创建 + 强密码生成
+- 逐台 SSH 验证
+- 安全默认策略（不赋 sudo）
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 运维工具
+
+**标签：** `linux` `用户管理` `ssh` `批量操作` `运维` `skill`
+
+---
+---
+
+## 组件 7：create-ec2
+
+### 第 1 页 — 基本信息
+
+**组件名称：** create-ec2
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# create-ec2 — EC2 实例克隆创建 Skill
+
+基于现有 EC2 实例或 AMI 克隆创建新实例，自动完成初始化配置。适用于扩容、灾备、环境克隆。
+
+## 完整流程
+
+1. 查询源实例配置（机型/安全组/子网/密钥对/磁盘）
+2. 创建 AMI（如无现成）并等待就绪
+3. run-instances 启动新实例
+4. SSH 初始化：root 密码 + 密码登录 + Node Exporter + 防火墙
+5. 输出新实例完整信息
+
+## 输出示例
+
+| 项目 | 值 |
+|------|-----|
+| 实例 ID | i-0xxxxxxxxxxxxxxxxx |
+| 机型 | c5.xlarge |
+| 公网 IP | 54.169.xxx.xxx |
+| 磁盘 | 50GB gp3 |
+| Node Exporter | active (port 9100) |
+
+## 使用方式
+
+触发命令：/create-ec2 i-0320626a45b7bd57e
+触发词：创建机器、新建实例、克隆服务器
+
+## 依赖
+
+AWS CLI v2 + SSH + IAM 权限（RunInstances, CreateImage, DescribeInstances, CreateTags）
+```
+
+**适用场景：** `网络通信`
+
+**开发语言：** Bash
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/shared-skills
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 create-ec2-1.0.0.zip
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/create-ec2
+cp SKILL.md .claude/skills/create-ec2/
+
+## 使用
+
+在 Claude Code 中输入 /create-ec2，提供源实例 ID 或 AMI ID。
+Skill 自动查询配置 → 创建 AMI → 启动实例 → 初始化 → 输出汇总。
+
+## 注意事项
+
+- 创建 AMI 需要几分钟到十几分钟
+- 部分区域 EIP 配额可能已满，可用自动分配公网 IP
+- 使用 Prometheus EC2 自动发现时，新实例自动纳入监控
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 完整 EC2 克隆流程
+- 自动 AMI 创建与等待
+- SSH 初始化（root 密码 + Node Exporter + 防火墙）
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 云服务（或运维工具）
+
+**标签：** `aws` `ec2` `ami` `云服务` `扩容` `运维` `skill`
+
+---
+---
+
+## 组件 8：ec2bot-deploy（EC2Bot 配套部署 Skill）
+
+### 第 1 页 — 基本信息
+
+**组件名称：** ec2bot-deploy
+
+**版本号：** 1.0.0
+
+**功能描述（Markdown）：**
+
+```
+# ec2bot-deploy — EC2Bot 一键部署 Skill
+
+引导式部署 EC2Bot 到 Linux 服务器。自动检查环境、引导填写配置、安装依赖、启动服务、验证运行。
+
+## 部署流程
+
+1. 检查 Python 3.9+ 环境
+2. 创建部署目录 /opt/ec2bot/
+3. 上传代码 + 安装依赖
+4. 引导配置（Bot Token + AWS Key + 用户 ID）
+5. 前台测试启动
+6. 安装 systemd 服务
+7. 验证 Bot 正常响应
+8. 引导自动导入实例
+9. 配置 cron 自动同步（可选）
+
+## 使用方式
+
+触发命令：/ec2bot-deploy 或 /ec2bot-deploy ubuntu@1.2.3.4
+触发词：部署 ec2bot、安装监控机器人
+
+## 前提条件
+
+- 目标服务器 Python 3.9+ 和 pip
+- Telegram Bot Token
+- AWS Access Key/Secret Key
+- 你的 Telegram 用户 ID
+
+## 依赖
+
+EC2Bot 项目源码
+```
+
+**适用场景：** `网络通信`
+
+**开发语言：** Bash / Python
+
+**开源协议：** MIT
+
+**主要贡献者：** 曹睿
+
+**Git 仓库地址：** https://github.com/yourname/ec2bot
+
+---
+
+### 第 2 页 — 附件 & 文档
+
+**安装包：** 打包 SKILL.md 为 ec2bot-deploy-1.0.0.zip
+
+**详细文档 / README：**
+
+```
+# 安装与使用
+
+## 安装
+
+mkdir -p .claude/skills/ec2bot-deploy
+cp SKILL.md .claude/skills/ec2bot-deploy/
+
+## 使用
+
+在 Claude Code 中输入 /ec2bot-deploy，按引导操作。
+
+## 需要准备的信息
+
+1. Telegram Bot Token（从 @BotFather 获取）
+2. AWS Access Key ID 和 Secret Access Key
+3. AWS 区域（如 ap-southeast-1）
+4. 你的 Telegram 用户 ID（从 @userinfobot 获取）
+```
+
+**版本更新说明：**
+
+```
+首次发布 v1.0.0
+- 引导式全流程部署
+- 自动环境检查 + 依赖安装
+- systemd 服务配置
+- 部署后自动验证
+```
+
+---
+
+### 第 3 页 — 分类 & 标签
+
+**选择分类：** 运维工具
+
+**标签：** `ec2bot` `部署` `telegram` `aws` `skill`
+
+---
+---
+
+## 发布顺序建议
+
+```
+第 1 批（核心，价值最高）：
+  ① ec2bot          — 独立完整项目
+  ② ec2bot-deploy   — 配套部署 Skill
+
+第 2 批（零依赖，受众最广）：
+  ③ make-plan       — 规划
+  ④ do-plan         — 执行
+
+第 3 批（运维通用）：
+  ⑤ fix-monitoring  — Prometheus 修复
+  ⑥ server-check    — 服务器巡检
+
+第 4 批（场景补充）：
+  ⑦ batch-add-user  — 批量加用户
+  ⑧ create-ec2      — 创建 EC2
+```

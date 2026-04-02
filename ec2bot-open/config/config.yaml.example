@@ -1,0 +1,96 @@
+# EC2Bot 配置文件模板
+# 复制为 config.yaml 后编辑
+
+# ============================================================
+# Telegram 配置
+# ============================================================
+telegram:
+  # 管理员用户 ID（完全控制权：管理账户、凭证、监控设置）
+  # 获取方式：Telegram 搜索 @userinfobot，发送任意消息即可看到你的 ID
+  admins:
+    - 123456789
+
+  # 操作员用户 ID（可执行实例操作：重启/启动/停止）
+  operators: []
+
+  # 只读用户/群组 ID（只能查看状态、搜索、看日志）
+  # 群组 ID 为负数，如 -1001234567890
+  viewers: []
+
+  # 告警推送目标（用户 ID 或群组 ID）
+  alert_chat_ids:
+    - 123456789
+
+# ============================================================
+# 监控参数
+# ============================================================
+monitor:
+  check_interval: 120           # 轮询间隔（秒）
+  cpu_alert_threshold: 85       # CPU 告警阈值（%）
+  alert_consecutive: 2          # 连续 N 次超阈值才告警
+  alert_cooldown: 600           # 同一告警冷却（秒）
+  notify_state_change: true     # 推送状态变化（running↔stopped）
+  enable_recovery_notice: true  # 推送恢复通知
+  enable_cpu_alarm: false       # CPU 告警开关（可通过 /cpualarm 切换）
+  cloudwatch_period: 300        # CloudWatch 粒度（秒）
+  timezone: Asia/Shanghai       # 本地时区
+
+# ============================================================
+# 安全策略
+# ============================================================
+policy:
+  protect_stop_in_production: true        # 禁止停止生产环境关键实例
+  protect_reboot_in_production: false     # 是否禁止重启生产关键实例
+  operation_cooldown_seconds: 300         # 操作冷却（秒）
+  require_double_confirm_for_stop: true   # 停止操作二次确认
+  business_hours_protect:
+    enabled: true
+    timezone: Asia/Shanghai
+    range: "09:00-22:00"
+
+# ============================================================
+# AWS 账户列表
+# ============================================================
+# 可通过 /account_add 命令在 Telegram 中交互式添加
+# 也可直接在此编辑
+
+aws_accounts:
+  - alias: "我的AWS账户"              # 显示名称（自定义）
+    region: ap-southeast-1            # AWS 区域
+    auth: access_key                  # access_key 或 instance_role
+    environment: prod                 # prod / test / dev
+    access_key_env: MY_AWS_KEY        # .env 中的 Access Key 变量名
+    secret_key_env: MY_AWS_SECRET     # .env 中的 Secret Key 变量名
+    session_token_env: MY_AWS_TOKEN   # .env 中的 Session Token 变量名（可选）
+    instances: []                     # 实例列表（建议用 /account_import 自动导入）
+
+  # 添加更多账户示例：
+  # - alias: "测试环境"
+  #   region: ap-east-1
+  #   auth: access_key
+  #   environment: test
+  #   access_key_env: TEST_AWS_KEY
+  #   secret_key_env: TEST_AWS_SECRET
+  #   session_token_env: TEST_AWS_TOKEN
+  #   instances: []
+
+# ============================================================
+# 存储配置
+# ============================================================
+storage:
+  sqlite_path: /opt/ec2bot/run/ec2bot.db    # 审计日志和状态缓存数据库
+
+# ============================================================
+# 实例配置说明（由 /account_import 自动生成，或手动添加）
+# ============================================================
+# instances:
+#   - id: i-0320626a45b7bd57e       # EC2 实例 ID
+#     name: web-server-01            # 显示名称
+#     role: app                      # 角色标签：app / ops / k8s / db
+#     critical: true                 # 是否关键实例（受生产保护策略约束）
+#     allow_actions:                 # 允许的操作列表
+#       - status                     # 查看状态
+#       - detail                     # 查看详情
+#       - reboot                     # 重启
+#       - start                      # 启动
+#       - stop                       # 停止

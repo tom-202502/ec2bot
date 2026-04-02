@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  ec2bot:
+    build: ..
+    container_name: ec2bot
+    restart: unless-stopped
+    volumes:
+      - ../config:/opt/ec2bot/config:ro    # 配置文件（只读挂载）
+      - ec2bot-data:/opt/ec2bot/run        # SQLite 数据持久化
+      - ../logs:/opt/ec2bot/logs           # 日志持久化
+    environment:
+      - EC2BOT_CONFIG=/opt/ec2bot/config/config.yaml
+      - EC2BOT_ENV=/opt/ec2bot/config/.env
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+
+volumes:
+  ec2bot-data:
